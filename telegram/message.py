@@ -15,12 +15,11 @@ class MessageContext(object):
         self.user: Optional[models.User] = None
 
         self.message_list: Optional[List[models.Message]] = None
-        self._create_message_dict()
 
-    def _create_message_dict(self) -> List[models.Message]:
-        message_group = self.linked_message.group
+    async def init_context(self):
+        message_group: str = self.linked_message.group
         self.message_list = list(
-            models.Message.objects.filter(group=message_group))
+            await models.Message.filter_message_by_group(message_group))
         self.message_list.sort(key=lambda x: x.order)
 
     def _get_user_current_substate(self, user: models.User) -> str:
@@ -52,7 +51,7 @@ class MessageContext(object):
         message: models.Message = self._get_message(user_substate)
         if message is not None:
             await self._send_message(user, message, message_id)
-            user.save()
+            await user.async_save()
         else:
             await self._clear_keyboard(user, message_id)
             return True
@@ -96,26 +95,13 @@ class QuizContext(object):
     def _get_wrong_answer(self, quiz: models.FreeAnswerQuiz) -> models.Message:
         return quiz.wrong_answer_action
 
-    def _inc_user_substate(self, user: models.User):
-        if user.substate == None:
-            user.substate = 0
-        else:
-            user.substate += 1
-        user.save()
-
-    def _reset_user_substate(self, user: models.User):
-        user.substate = None
-        user.save()
-
     async def run_oucoming(self, user: models.User, text_type: str) -> str:
         if text_type == 'question':
             message: models.Message = self._get_question(self.current_quiz)
-            self._inc_user_substate(user)
         elif text_type == 'hint':
             message: models.Message = self._get_hint(self.current_quiz)
         elif text_type == 'right_answer':
             message: models.Message = self._get_right_answer(self.current_quiz)
-            self._inc_user_substate(user)
         elif text_type == 'wrong_answer':
             message: models.Message = self._get_wrong_answer(self.current_quiz)
         elif text_type == 'back':
@@ -170,17 +156,18 @@ class DashboardContext(object):
         else:
             return self._format_text(text)
 
-    def _get_message(self, name: str) -> models.Message:
-        return models.Message.objects.get(name=name)
+    async def _get_message(self, name: str) -> models.Message:
+        return await models.Message.get_message_by_name(name)
 
     async def _send_message(self, user: models.User, message: models.Message, not_done_tasks: List[str]) -> None:
         chat_id: int = user.chat_id
         text: str = message.text_content
-        keyboard: types.ReplyKeyboardMarkup = DashboardKeyboard.get_markup(not_done_tasks)
+        keyboard: types.ReplyKeyboardMarkup = DashboardKeyboard.get_markup(
+            not_done_tasks)
         await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
 
     async def run_outcoming(self, user: models.User, message_name: str, not_done_tasks: List[str]):
-        message: models.Message = self._get_message(message_name)
+        message: models.Message = await self._get_message(message_name)
         await self._send_message(user, message, not_done_tasks)
 
 

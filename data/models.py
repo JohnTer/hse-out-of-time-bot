@@ -3,6 +3,7 @@ from typing import List
 from django.db import models
 from aiogram import types
 from botstate import states
+from aioutils import sync_to_async
 
 
 class User(models.Model):
@@ -19,11 +20,23 @@ class User(models.Model):
     solved_task_list = models.CharField(max_length=512, default='')
 
     @classmethod
+    @sync_to_async
     def create(cls, message: types.Message):
-        return cls(name=message.from_user.first_name,
+        user = cls(name=message.from_user.first_name,
                    chat_id=message.chat.id,
                    telegram_id=message.from_user.username,
                    state=states.State.GREETING.name)
+        user.save()
+        return user
+
+    @staticmethod
+    @sync_to_async
+    def get_user_by_chat_id(chat_id: int):
+        return User.objects.get(chat_id=chat_id)
+
+    @sync_to_async
+    def async_save(self):
+        self.save()
 
     @staticmethod
     def add_solved_task(user: 'User', task_name: str) -> None:
@@ -68,6 +81,16 @@ class Message(models.Model):
     next_button_name = models.CharField(max_length=255, null=True)
     previous_button_name = models.CharField(max_length=255, null=True)
 
+    @staticmethod
+    @sync_to_async
+    def get_message_by_name(name: str) -> 'Messages':
+        return Message.objects.get(name=name)
+
+    @staticmethod
+    @sync_to_async
+    def filter_message_by_group(group: str) -> 'Messages':
+        return Message.objects.filter(group=group)
+
 
 class LinkedMessages(models.Model):
     id = models.AutoField(primary_key=True)
@@ -77,6 +100,11 @@ class LinkedMessages(models.Model):
     group = models.CharField(max_length=255, null=True)
 
     next_state = models.CharField(max_length=255, null=True)
+
+    @staticmethod
+    @sync_to_async
+    def get_linked_message_by_name(name: str) -> 'LinkedMessages':
+        return LinkedMessages.objects.get(name=name)
 
 
 class FreeAnswerQuiz(models.Model):
@@ -98,3 +126,13 @@ class FreeAnswerQuiz(models.Model):
 
     next_quiz = models.ForeignKey(
         'FreeAnswerQuiz',  on_delete=models.SET_NULL, null=True, related_name='next_quiz_fk')
+
+    @staticmethod
+    @sync_to_async
+    def get_quiz_by_name(name: str) -> 'FreeAnswerQuiz':
+        return FreeAnswerQuiz.objects.get(name=name)
+
+    @staticmethod
+    @sync_to_async
+    def get_quiz_all() -> List['FreeAnswerQuiz']:
+        return FreeAnswerQuiz.objects.all()
