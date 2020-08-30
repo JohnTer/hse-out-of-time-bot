@@ -14,7 +14,7 @@ from data import models
 class BaseContext(object):
     def __init__(self):
         self.bot: Optional[Bot] = None
-        self.media_cache: Dict[str, str] = MediaCache()
+        self.media_cache: MediaCache = MediaCache()
 
     def _get_media(self, message: models.Message) -> Optional[Union[types.InputFile, str]]:
         if message.media_name is None:
@@ -31,17 +31,17 @@ class BaseContext(object):
             return None
         return media_file
 
-    def _update_media_cache(self, message: models.Message, response):
-        file_id: str = response.photo[-1].file_id
+    def _update_media_cache(self, message: models.Message, response) -> None:
+        file_id: str = response.photo[-1].file_id # -1 for get photo with best quality
         self.media_cache.update(message.media_name, file_id)
 
-    async def send_with_media(self, user: models.User, message: models.Message, reply_markup: types.ReplyKeyboardMarkup):
+    async def send_with_media(self, user: models.User, message: models.Message, reply_markup: types.ReplyKeyboardMarkup) -> None:
         chat_id: int = user.chat_id
         text: str = message.text_content
         media_file: Optional[Union[types.InputFile, str]
                              ] = self._get_media(message)
         if media_file is not None:
-            response = await self.bot.send_photo(chat_id=chat_id, photo=media_file, caption=text, reply_markup=reply_markup)
+            response: types.Message() = await self.bot.send_photo(chat_id=chat_id, photo=media_file, caption=text, reply_markup=reply_markup)
             self._update_media_cache(message, response)
         else:
             await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup)
@@ -56,7 +56,7 @@ class MessageContext(BaseContext):
 
         self.message_list: Optional[List[models.Message]] = None
 
-    async def init_context(self):
+    async def init_context(self) -> None:
         message_group: str = self.linked_message.group
         self.message_list = list(
             await models.Message.filter_message_by_group(message_group))
@@ -82,7 +82,7 @@ class MessageContext(BaseContext):
         else:
             await self.bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, reply_markup=keyboard)
 
-    async def _clear_keyboard(self, user: models.User, message_id: int):
+    async def _clear_keyboard(self, user: models.User, message_id: int) -> None:
         chat_id: int = user.chat_id
         await self.bot.edit_message_reply_markup(chat_id=chat_id, message_id=message_id, reply_markup=None)
 
@@ -111,11 +111,8 @@ class QuizContext(BaseContext):
     def __init__(self, bot: Bot, primary_quiz: models.FreeAnswerQuiz) -> None:
         super().__init__()
         self.bot: Bot = bot
-        self.primary_quiz: models.FreeAnswerQuiz = primary_quiz
-        self.current_quiz: models.FreeAnswerQuiz = self.primary_quiz
+        self.current_quiz: models.FreeAnswerQuiz = primary_quiz
         self.user: Optional[models.User] = None
-
-        self.menu_state = None
 
     async def _send_message(self, user: models.User, message: models.Message) -> None:
         keyboard: types.InlineKeyboardMarkup = QuizKeyboard.get_markup(
@@ -146,7 +143,7 @@ class QuizContext(BaseContext):
         elif text_type == 'back':
             return text_type
         else:
-            Exception()
+            raise Exception('Unknown text_type')
 
         await self._send_message(user, message)
         return text_type
@@ -157,7 +154,7 @@ class QuizContext(BaseContext):
         right_answer = right_answer.strip().lower()
         return True if text == right_answer else False
 
-    async def run_incoming(self, user: models.User, text: str, firts_time: bool = False):
+    async def run_incoming(self, user: models.User, text: str, firts_time: bool = False) -> str:
         text_type: Optional[str] = None
 
         if firts_time:
@@ -193,7 +190,7 @@ class DashboardContext(BaseContext):
             not_done_tasks)
         await self.send_with_media(user, message, keyboard)
 
-    async def run_outcoming(self, user: models.User, message_name: str, not_done_tasks: List[str]):
+    async def run_outcoming(self, user: models.User, message_name: str, not_done_tasks: List[str]) -> None:
         message: models.Message = await self._get_message(message_name)
         await self._send_message(user, message, not_done_tasks)
 
@@ -206,5 +203,5 @@ class WaitingContext(BaseContext):
     async def _incorrect_text_handler(self, user: models.User, message_id: int) -> None:
         await self.bot.delete_message(chat_id=user.chat_id, message_id=message_id)
 
-    async def run_incoming(self, user: models.User, text: str, message_id: int):
+    async def run_incoming(self, user: models.User, text: str, message_id: int) -> None:
         await self._incorrect_text_handler(user, message_id)

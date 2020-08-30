@@ -6,13 +6,13 @@ from aiogram import types
 
 from loader import bot, dp
 
-async def on_startup(dp):
+async def on_startup(dp) -> None:
     logging.info('Starting bot...')
     await bot.set_webhook(WEBHOOK_URL, certificate=types.InputFile('webhook_cert.pem'))
     logging.info('Certificate was uploaded successfully.')
 
 
-async def on_shutdown(dp):
+async def on_shutdown(dp) -> None:
     logging.info('Shutting down...')
     logging.info('Delete webhook...')
     await bot.delete_webhook()

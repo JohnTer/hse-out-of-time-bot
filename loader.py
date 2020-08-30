@@ -9,9 +9,9 @@ _django_app = get_wsgi_application()  # Need for use ORM
 from botstate import machine
 
 
-bot = Bot(token=API_TOKEN)
+bot: Bot = Bot(token=API_TOKEN)
 
-dp = Dispatcher(bot)
+dp: Dispatcher = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
 
-engine = machine.Machine(bot, None)
+engine: machine.Machine = machine.Machine(bot, None)
