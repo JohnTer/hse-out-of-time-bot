@@ -1,4 +1,5 @@
-from settings import WEBHOOK_PATH, WEBAPP_HOST, WEBAPP_PORT
+import logging
+from settings import WEBHOOK_PATH, WEBAPP_HOST, WEBAPP_PORT, WEBHOOK_URL
 
 from aiogram.utils.executor import start_webhook
 from aiogram import types
