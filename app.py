@@ -1,4 +1,4 @@
-from settings import *
+from settings import WEBHOOK_PATH, WEBAPP_HOST, WEBAPP_PORT
 
 from aiogram.utils.executor import start_webhook
 from aiogram import types
