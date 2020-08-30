@@ -124,7 +124,7 @@ class QuizState(object):
 
         self.previous_state: Optional[State] = State.DASHBOARD.name
 
-        self.task_name = user.current_task
+        self.task_name: str = user.current_task
 
         self.context: Optional[message.QuizContext] = None
 

@@ -27,3 +27,5 @@ INSTALLED_APPS = (
 )
 
 SECRET_KEY = '1234567s'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+g = 9

@@ -1,33 +1,34 @@
 # Django specific settings
 import os
-import time
 from django.core.wsgi import get_wsgi_application
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 application = get_wsgi_application()
 
 
-import concurrent.futures
-import asyncio
-from botstate import machine
-
-from telegram.message import MessageContext, QuizContext
-from aiogram.utils.executor import start_webhook
-from aiogram.dispatcher.webhook import SendMessage
-from aiogram.dispatcher import Dispatcher
-from aiogram.contrib.middlewares.logging import LoggingMiddleware
-from aiogram import Bot, types
-import logging
-
+from local_settings import *
 from data import models
+import logging
+from aiogram import Bot, types
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
+from aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher.webhook import SendMessage
+from aiogram.utils.executor import start_webhook
+from telegram.message import MessageContext, QuizContext
+from botstate import machine
+import asyncio
+import concurrent.futures
+
+import time
+
 
 
 
 loop = asyncio.get_event_loop()
 
-from local_settings import *
 
-logging.basicConfig(level=logging.INFO)
+LOG_FORMAT = '%(name)s - %(levelname)s - %(asctime)s # %(message)s'
+logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt='%I:%M:%S')
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
@@ -40,8 +41,11 @@ engine = machine.Machine(bot, loop)
 async def echo(message: types.Message):
     current_time = time.time()
     if abs(message.date.timestamp() - current_time) > 10:
+        logging.warning('the message \"%s\" by user %d was discarded by timeout (send time %d)',
+                        message.text, message.from_user.id, message.date.timestamp())
         return
     await engine.message_handler(message)
+    logging.info('the message \"%s\" by user %d was processed in %f sec', message.text, message.from_user.id, time.time() - current_time)
     return
 
 
