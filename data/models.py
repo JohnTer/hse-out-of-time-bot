@@ -21,8 +21,8 @@ class User(models.Model):
 
     @classmethod
     @sync_to_async
-    def create(cls, message: types.Message):
-        user = cls(name=message.from_user.first_name,
+    def create(cls, message: types.Message) -> 'User':
+        user: 'User' = cls(name=message.from_user.first_name,
                    chat_id=message.chat.id,
                    telegram_id=message.from_user.username,
                    state=states.State.GREETING.name)
@@ -31,11 +31,11 @@ class User(models.Model):
 
     @staticmethod
     @sync_to_async
-    def get_user_by_chat_id(chat_id: int):
+    def get_user_by_chat_id(chat_id: int) -> 'User':
         return User.objects.get(chat_id=chat_id)
 
     @sync_to_async
-    def async_save(self):
+    def async_save(self) -> None:
         self.save()
 
     @staticmethod
@@ -48,7 +48,6 @@ class User(models.Model):
 
     @staticmethod
     def check_solve_task(user: 'User', task_name: str) -> bool:
-        SEPARATOR: str = '#'
         task_list: List[str] = User.get_task_list(user)
         return True if task_name in task_list else False
 

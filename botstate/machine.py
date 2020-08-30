@@ -21,13 +21,13 @@ class GreetingState(object):
     async def _get_linked_message(self, name: str) -> models.LinkedMessages:
         return await models.LinkedMessages.get_linked_message_by_name(name)
 
-    async def set_context(self):
+    async def set_context(self) -> None:
         linked_message: models.LinkedMessages = await self._get_linked_message(
             self.linked_message_name)
         self.context = message.MessageContext(self.bot, linked_message)
         await self.context.init_context()
 
-    async def _next_state_handler(self, user: models.User):
+    async def _next_state_handler(self, user: models.User) -> None:
         user.state = self.next_state
         user.substate = None
         await user.async_save()
@@ -70,30 +70,30 @@ class DashboardState(object):
 
         self._prepare_context()
 
-    def _prepare_context(self):
+    def _prepare_context(self) -> None:
         self.context: message.DashboardContext = message.DashboardContext(
             self.bot)
 
-    async def _next_state_handler(self, user: models.User, task: str):
+    async def _next_state_handler(self, user: models.User, task: str) -> None:
         user.state = self.next_state
         user.substate = None
         user.solving_mode = False
         user.current_task = task
         await user.async_save()
 
-    async def _finish_state_handler(self, user: models.User):
+    async def _finish_state_handler(self, user: models.User) -> None:
         user.state = self.finish_state
         user.substate = None
         user.solving_mode = False
         user.current_task = None
         await user.async_save()
 
-    async def incoming_handler(self, user: models.User, text: str, message_id: int):
+    async def incoming_handler(self, user: models.User, text: str, message_id: int) -> None:
         result: Optional[str] = await self.context.run_incoming(user, text, message_id)
         if result is not None:
             await self._next_state_handler(user, result)
 
-    async def outcoming_handler(self, user: models.User, not_done_tasks: Optional[List[str]] = None):
+    async def outcoming_handler(self, user: models.User, not_done_tasks: Optional[List[str]] = None) -> None:
         message: str = self.outcoming_message
         if not_done_tasks is None:
             not_done_tasks: List[str] = await self._get_not_done_tasks(user)
@@ -110,7 +110,7 @@ class DashboardState(object):
         all_tasks: List[models.FreeAnswerQuiz] = await models.FreeAnswerQuiz.get_quiz_all()
         return models.User.get_not_done_tasks(user, all_tasks)
 
-    async def handler(self, user: models.User, text: str, message_id: int, init: bool = False):
+    async def handler(self, user: models.User, text: str, message_id: int, init: bool = False) -> None:
         not_done_tasks: List[str] = await self._get_not_done_tasks(user)
         if init or not self._check_corectness(text, not_done_tasks):
             await self.outcoming_handler(user, not_done_tasks)
@@ -141,18 +141,18 @@ class QuizState(object):
         user.current_task = None
         await user.async_save()
 
-    async def run_oucoming(self, user: models.User):
+    async def run_oucoming(self, user: models.User) -> None:
         await self.context.run_oucoming(user, 'question')
         user.solving_mode = True
         await user.async_save()
         return None
 
-    async def right_answer_handler(self, user: models.User):
+    async def right_answer_handler(self, user: models.User) -> None:
         solved_task: str = user.current_task
         models.User.add_solved_task(user, solved_task)
         await self._back_to_menu(user)
 
-    async def run_incoming(self, user: models.User, test: str):
+    async def run_incoming(self, user: models.User, test: str) -> Optional[bool]:
         text_type: str = await self.context.run_incoming(user, test)
         if text_type == 'back':
             await self._back_to_menu(user)
@@ -162,7 +162,7 @@ class QuizState(object):
             return True
         return None
 
-    async def handler(self, user: models.User, text: str):
+    async def handler(self, user: models.User, text: str) -> Optional[bool]:
         if not user.solving_mode:
             return await self.run_oucoming(user)
         else:
@@ -175,10 +175,10 @@ class WaitingState(object):
 
         self._prepare_context()
 
-    def _prepare_context(self):
+    def _prepare_context(self) -> None:
         self.context = message.WaitingContext(self.bot)
 
-    async def handler(self, user: models.User, text: str, message_id: Optional[int]):
+    async def handler(self, user: models.User, text: str, message_id: Optional[int]) -> None:
         await self.context.run_incoming(user, text, message_id)
 
 
@@ -233,7 +233,7 @@ class Machine(object):
             loop_count_iterations = self._change_count_loop(
                 loop_count_iterations, next_state)
 
-    async def callback_handler(self, callback_query: types.CallbackQuery):
+    async def callback_handler(self, callback_query: types.CallbackQuery) -> None:
         user: models.User = await self._get_user_by_message(callback_query.message)
 
         if user.state == State.GREETING.name:

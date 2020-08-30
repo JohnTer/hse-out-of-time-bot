@@ -1,8 +1,8 @@
-from enum import Enum
+from enum import Enum, auto
 
 
 class State(Enum):
-    GREETING: int = 1
-    WAITING: int = 2
-    DASHBOARD: int = 3
-    QUIZ: int = 4
+    GREETING: int = auto()
+    WAITING: int = auto()
+    DASHBOARD: int = auto()
+    QUIZ: int = auto()
