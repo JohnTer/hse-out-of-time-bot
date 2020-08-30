@@ -5,13 +5,13 @@ from aiogram import types
 
 from loader import dp, bot, engine
 
+from .middleware import timeout_message_middleware
+
 
 @dp.message_handler()
 async def echo(message: types.Message) -> None:
     current_time: float = time.time()
-    if abs(message.date.timestamp() - current_time) > 10:
-        logging.warning('the message \"%s\" by user %d was discarded by timeout (send time %d)',
-                        message.text, message.from_user.id, message.date.timestamp())
+    if not timeout_message_middleware(message):
         return
     await engine.message_handler(message)
     logging.info('the message \"%s\" by user %d was processed in %f ms',

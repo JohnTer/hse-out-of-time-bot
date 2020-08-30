@@ -40,5 +40,6 @@ WEBAPP_PORT = os.getenv('WEBAPP_PORT')
 # django secret key
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-
 WEBHOOK_URL = f"{WEBHOOK_HOST}:{WEBHOOK_PORT}{WEBHOOK_PATH}"
+
+MESSAGE_TIMEOUT = 10 # sec
