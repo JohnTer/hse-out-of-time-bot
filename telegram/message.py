@@ -1,15 +1,55 @@
-from typing import List, Optional, Dict
+import os
+import logging
+from typing import List, Optional, Dict, Union
 
 from aiogram import Bot, types
 
-from data import models
-
+import settings
 from .keyboard import SimpleKeyboard, QuizKeyboard, DashboardKeyboard
 from botstate import states
+from utils import MediaCache
+from data import models
 
 
-class MessageContext(object):
+class BaseContext(object):
+    def __init__(self):
+        self.bot: Optional[Bot] = None
+        self.media_cache: Dict[str, str] = MediaCache()
+
+    def _get_media(self, message: models.Message) -> Optional[Union[types.InputFile, str]]:
+        if message.media_name is None:
+            return None
+
+        file_id: str = self.media_cache.find(message.media_name)
+        if file_id is not None:
+            return file_id
+        try:
+            path: str = os.path.join(settings.STATIC_ROOT, message.media_name)
+            media_file: types.InputFile = types.InputFile(path)
+        except:
+            logging.error("static file %s not found.", message.media_name)
+            return None
+        return media_file
+
+    def _update_media_cache(self, message: models.Message, response):
+        file_id: str = response.photo[-1].file_id
+        self.media_cache.update(message.media_name, file_id)
+
+    async def send_with_media(self, user: models.User, message: models.Message, reply_markup: types.ReplyKeyboardMarkup):
+        chat_id: int = user.chat_id
+        text: str = message.text_content
+        media_file: Optional[Union[types.InputFile, str]
+                             ] = self._get_media(message)
+        if media_file is not None:
+            response = await self.bot.send_photo(chat_id=chat_id, photo=media_file, caption=text, reply_markup=reply_markup)
+            self._update_media_cache(message, response)
+        else:
+            await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup)
+
+
+class MessageContext(BaseContext):
     def __init__(self, bot: Bot, linked_message: models.LinkedMessages) -> None:
+        super().__init__()
         self.bot: Bot = bot
         self.linked_message: models.LinkedMessages = linked_message
         self.user: Optional[models.User] = None
@@ -67,8 +107,9 @@ class MessageContext(object):
         return await self.run_oucoming(user, message_id)
 
 
-class QuizContext(object):
+class QuizContext(BaseContext):
     def __init__(self, bot: Bot, primary_quiz: models.FreeAnswerQuiz) -> None:
+        super().__init__()
         self.bot: Bot = bot
         self.primary_quiz: models.FreeAnswerQuiz = primary_quiz
         self.current_quiz: models.FreeAnswerQuiz = self.primary_quiz
@@ -77,11 +118,9 @@ class QuizContext(object):
         self.menu_state = None
 
     async def _send_message(self, user: models.User, message: models.Message) -> None:
-        chat_id: int = user.chat_id
-        text: str = message.text_content
         keyboard: types.InlineKeyboardMarkup = QuizKeyboard.get_markup(
             self.current_quiz)
-        await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
+        await self.send_with_media(user, message, keyboard)
 
     def _get_question(self, quiz: models.FreeAnswerQuiz) -> models.Message:
         return quiz.question
@@ -134,45 +173,34 @@ class QuizContext(object):
         return await self.run_oucoming(user, text_type)
 
 
-class DashboardContext(object):
+class DashboardContext(BaseContext):
     def __init__(self, bot: Bot) -> None:
+        super().__init__()
         self.bot: Bot = bot
         self.user: Optional[models.User] = None
 
     def _format_text(self, text: str) -> str:
         return text.strip()
 
-    def _check_correctness_text(self, text: str) -> bool:
-        return self._format_text(text).isnumeric()
-
-    async def _incorrect_text_handler(self, user: models.User, message_id: int) -> None:
-        await self.bot.send_message(chat_id=user.chat_id, text='Dashboard trash')
-        # await self.bot.delete_message(chat_id=user.chat_id, message_id=message_id)
-
     async def run_incoming(self, user: models.User, text: str, message_id: int) -> Optional[str]:
-        if not self._check_correctness_text(text):
-            await self._incorrect_text_handler(user, message_id)
-            return None
-        else:
-            return self._format_text(text)
+        return self._format_text(text)
 
     async def _get_message(self, name: str) -> models.Message:
         return await models.Message.get_message_by_name(name)
 
     async def _send_message(self, user: models.User, message: models.Message, not_done_tasks: List[str]) -> None:
-        chat_id: int = user.chat_id
-        text: str = message.text_content
         keyboard: types.ReplyKeyboardMarkup = DashboardKeyboard.get_markup(
             not_done_tasks)
-        await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
+        await self.send_with_media(user, message, keyboard)
 
     async def run_outcoming(self, user: models.User, message_name: str, not_done_tasks: List[str]):
         message: models.Message = await self._get_message(message_name)
         await self._send_message(user, message, not_done_tasks)
 
 
-class WaitingContext(object):
+class WaitingContext(BaseContext):
     def __init__(self, bot: Bot) -> None:
+        super().__init__()
         self.bot: Bot = bot
 
     async def _incorrect_text_handler(self, user: models.User, message_id: int) -> None:
