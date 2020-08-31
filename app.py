@@ -4,7 +4,7 @@ from settings import WEBHOOK_PATH, WEBAPP_HOST, WEBAPP_PORT, WEBHOOK_URL
 from aiogram.utils.executor import start_webhook
 from aiogram import types
 
-from loader import bot, dp
+from handlers.handler import bot, dp 
 
 async def on_startup(dp) -> None:
     logging.info('Starting bot...')
@@ -17,7 +17,7 @@ async def on_shutdown(dp) -> None:
     logging.info('Delete webhook...')
     await bot.delete_webhook()
     logging.info('Webhook was deleted.')
-    logging.warning('The bot was disabled.')
+    logging.info('The bot was disabled.')
 
 
 if __name__ == '__main__':
