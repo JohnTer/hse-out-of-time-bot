@@ -53,13 +53,20 @@ class User(models.Model):
 
     @staticmethod
     def get_not_done_tasks(user: 'User', all_tasks: List['FreeAnswerQuiz']) -> List[str]:
-        SEPARATOR: str = '#'
-
         all_tasks_set = {task.name for task in all_tasks}
 
         task_list: List[str] = User.get_task_list(user)
         done_tasks = set(task_list)
-        return list(all_tasks_set - done_tasks)
+        not_done_set: set = all_tasks_set - done_tasks
+        result: List[str] = []
+        for name in not_done_set:
+            if '*' not in name:
+                continue
+            if name[:-1] in not_done_set:
+                result.append(name[:-1])
+            else:
+                result.append(name)
+        return result
 
     @staticmethod
     def get_task_list(user: 'User') -> List[str]:
