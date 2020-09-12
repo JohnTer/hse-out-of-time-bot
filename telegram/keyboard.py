@@ -51,6 +51,7 @@ class DashboardKeyboard(object):
 
         buttons: List[types.KeyboardButton] = []
 
+        tasks_name.sort()
         for i in range(1, len(tasks_name) + 1):
             buttons.append(types.KeyboardButton(tasks_name[i-1]))
             if i % DashboardKeyboard.COLUMN_NUM_SEPARATOR == 0 or i == len(tasks_name):
