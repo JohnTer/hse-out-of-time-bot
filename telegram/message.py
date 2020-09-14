@@ -149,10 +149,10 @@ class QuizContext(BaseContext):
         return text_type
 
     def _check_right_answer(self, text: str) -> bool:
-        right_answer: str = self.current_quiz.right_answer
+        right_answer: List[str] = models.FreeAnswerQuiz.get_answers_list(self.current_quiz)
         text = text.strip().lower()
-        right_answer = right_answer.strip().lower()
-        return True if text == right_answer else False
+        right_answer = [text.strip().lower() for text in right_answer]
+        return True if text in right_answer else False
 
     async def run_incoming(self, user: models.User, text: str, firts_time: bool = False) -> str:
         text_type: Optional[str] = None

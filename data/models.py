@@ -142,3 +142,8 @@ class FreeAnswerQuiz(models.Model):
     @sync_to_async
     def get_quiz_all() -> List['FreeAnswerQuiz']:
         return FreeAnswerQuiz.objects.all()
+
+    @staticmethod
+    def get_answers_list(quiz: 'FreeAnswerQuiz') -> List[str]:
+        SEPARATOR: str = '#'
+        return quiz.right_answer.split(SEPARATOR)
