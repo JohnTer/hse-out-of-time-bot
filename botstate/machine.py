@@ -15,7 +15,7 @@ class GreetingState(object):
         self.previous_state: Optional[State] = None
         self.next_state: Optional[State] = State.DASHBOARD.name
 
-        self.linked_message_name = 'greeting'
+        self.linked_message_name = 'link_greeting'
         self.context: Optional[message.MessageContext] = None
 
     async def _get_linked_message(self, name: str) -> models.LinkedMessages:
