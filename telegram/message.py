@@ -59,7 +59,7 @@ class MessageContext(BaseContext):
     async def init_context(self) -> None:
         message_group: str = self.linked_message.group
         self.message_list = list(
-            await models.Message.filter_message_by_group(message_group))
+            models.Message.filter_message_by_group(message_group))
         self.message_list.sort(key=lambda x: x.order)
 
     def _get_user_current_substate(self, user: models.User) -> str:
@@ -187,7 +187,7 @@ class DashboardContext(BaseContext):
         return self._format_text(text)
 
     async def _get_message(self, name: str) -> models.Message:
-        return await models.Message.get_message_by_name(name)
+        return models.Message.get_message_by_name(name)
 
     async def _send_message(self, user: models.User, message: models.Message, not_done_tasks: List[str]) -> None:
         keyboard: types.ReplyKeyboardMarkup = DashboardKeyboard.get_markup(

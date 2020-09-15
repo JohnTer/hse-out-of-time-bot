@@ -19,7 +19,7 @@ class GreetingState(object):
         self.context: Optional[message.MessageContext] = None
 
     async def _get_linked_message(self, name: str) -> models.LinkedMessages:
-        return await models.LinkedMessages.get_linked_message_by_name(name)
+        return models.LinkedMessages.get_linked_message_by_name(name)
 
     async def set_context(self) -> None:
         linked_message: models.LinkedMessages = await self._get_linked_message(
@@ -32,7 +32,7 @@ class GreetingState(object):
         user.substate = None
         await user.async_save()
 
-        message: models.Message = await models.Message.get_message_by_name('denchik')
+        message: models.Message = models.Message.get_message_by_name('denchik')
         await self.context.send_with_media(user, message, None)
 
     async def incoming_handler(self, user: models.User, payload_data: int, message_id: int) -> Optional[bool]:
@@ -110,7 +110,7 @@ class DashboardState(object):
         return True if text in not_done_tasks else False
 
     async def _get_not_done_tasks(self, user: models.User) -> List[str]:
-        all_tasks: List[models.FreeAnswerQuiz] = await models.FreeAnswerQuiz.get_quiz_all()
+        all_tasks: List[models.FreeAnswerQuiz] = models.FreeAnswerQuiz.get_quiz_all()
         return models.User.get_not_done_tasks(user, all_tasks)
 
     async def handler(self, user: models.User, text: str, message_id: int, init: bool = False) -> None:
@@ -132,7 +132,7 @@ class QuizState(object):
         self.context: Optional[message.QuizContext] = None
 
     async def _get_quiz(self, name: str) -> models.FreeAnswerQuiz:
-        return await models.FreeAnswerQuiz.get_quiz_by_name(name)
+        return models.FreeAnswerQuiz.get_quiz_by_name(name)
 
     async def set_context(self) -> None:
         quiz: models.FreeAnswerQuiz = await self._get_quiz(self.task_name)
