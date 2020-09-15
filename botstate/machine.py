@@ -32,6 +32,9 @@ class GreetingState(object):
         user.substate = None
         await user.async_save()
 
+        message: models.Message = await models.Message.get_message_by_name('denchik')
+        await self.context.send_with_media(user, message, None)
+
     async def incoming_handler(self, user: models.User, payload_data: int, message_id: int) -> Optional[bool]:
         next_state_flag: Optional[bool] = await self.context.run_incoming(
             user, payload_data, message_id)

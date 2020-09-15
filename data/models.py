@@ -23,9 +23,9 @@ class User(models.Model):
     @sync_to_async
     def create(cls, message: types.Message) -> 'User':
         user: 'User' = cls(name=message.from_user.first_name,
-                   chat_id=message.chat.id,
-                   telegram_id=message.from_user.username,
-                   state=states.State.GREETING.name)
+                           chat_id=message.chat.id,
+                           telegram_id=message.from_user.username,
+                           state=states.State.GREETING.name)
         user.save()
         return user
 
@@ -60,11 +60,17 @@ class User(models.Model):
         not_done_set: set = all_tasks_set - done_tasks
         result: List[str] = []
         for name in not_done_set:
-            if '*' not in name:
+            if '*' not in name or '**' in name:
                 continue
-            if name[:-1] in not_done_set:
+            if (name[:-1] in not_done_set):
                 result.append(name[:-1])
             else:
+                result.append(name)
+
+        for name in not_done_set:
+            if '**' not in name:
+                continue
+            if (name[:-1] not in not_done_set) and (name[:-2] not in not_done_set):
                 result.append(name)
         return result
 

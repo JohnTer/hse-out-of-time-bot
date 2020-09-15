@@ -41,10 +41,10 @@ class BaseContext(object):
         media_file: Optional[Union[types.InputFile, str]
                              ] = self._get_media(message)
         if media_file is not None:
-            response: types.Message() = await self.bot.send_photo(chat_id=chat_id, photo=media_file, caption=text, reply_markup=reply_markup)
+            response: types.Message() = await self.bot.send_photo(chat_id=chat_id, photo=media_file, caption=text, reply_markup=reply_markup, parse_mode=types.ParseMode.MARKDOWN)
             self._update_media_cache(message, response)
         else:
-            await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup)
+            await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup, parse_mode=types.ParseMode.MARKDOWN)
 
 
 class MessageContext(BaseContext):
@@ -77,10 +77,14 @@ class MessageContext(BaseContext):
         text: str = message.text_content
         keyboard: types.InlineKeyboardMarkup = SimpleKeyboard.get_markup(
             message)
-        if message_id is None:
+        try:
+            if message_id is None:
+                await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
+            else:
+                await self.bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, reply_markup=keyboard)
+        except:
             await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
-        else:
-            await self.bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, reply_markup=keyboard)
+            logging.warning('Message is not modified error by user %d, chat_id %d , send new message', user.id, chat_id)
 
     async def _clear_keyboard(self, user: models.User, message_id: int) -> None:
         chat_id: int = user.chat_id
