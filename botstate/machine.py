@@ -15,7 +15,7 @@ class GreetingState(object):
         self.previous_state: Optional[State] = None
         self.next_state: Optional[State] = State.DASHBOARD.name
 
-        self.linked_message_name = 'greeting'
+        self.linked_message_name = 'link_greeting'
         self.context: Optional[message.MessageContext] = None
 
     async def _get_linked_message(self, name: str) -> models.LinkedMessages:
@@ -31,6 +31,9 @@ class GreetingState(object):
         user.state = self.next_state
         user.substate = None
         await user.async_save()
+
+        message: models.Message = await models.Message.get_message_by_name('denchik')
+        await self.context.send_with_media(user, message, None)
 
     async def incoming_handler(self, user: models.User, payload_data: int, message_id: int) -> Optional[bool]:
         next_state_flag: Optional[bool] = await self.context.run_incoming(

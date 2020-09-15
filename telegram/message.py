@@ -41,10 +41,10 @@ class BaseContext(object):
         media_file: Optional[Union[types.InputFile, str]
                              ] = self._get_media(message)
         if media_file is not None:
-            response: types.Message() = await self.bot.send_photo(chat_id=chat_id, photo=media_file, caption=text, reply_markup=reply_markup)
+            response: types.Message() = await self.bot.send_photo(chat_id=chat_id, photo=media_file, caption=text, reply_markup=reply_markup, parse_mode=types.ParseMode.MARKDOWN)
             self._update_media_cache(message, response)
         else:
-            await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup)
+            await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup, parse_mode=types.ParseMode.MARKDOWN)
 
 
 class MessageContext(BaseContext):
@@ -77,10 +77,14 @@ class MessageContext(BaseContext):
         text: str = message.text_content
         keyboard: types.InlineKeyboardMarkup = SimpleKeyboard.get_markup(
             message)
-        if message_id is None:
+        try:
+            if message_id is None:
+                await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
+            else:
+                await self.bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, reply_markup=keyboard)
+        except:
             await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
-        else:
-            await self.bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, reply_markup=keyboard)
+            logging.warning('Message is not modified error by user %d, chat_id %d , send new message', user.id, chat_id)
 
     async def _clear_keyboard(self, user: models.User, message_id: int) -> None:
         chat_id: int = user.chat_id
@@ -149,10 +153,10 @@ class QuizContext(BaseContext):
         return text_type
 
     def _check_right_answer(self, text: str) -> bool:
-        right_answer: str = self.current_quiz.right_answer
+        right_answer: List[str] = models.FreeAnswerQuiz.get_answers_list(self.current_quiz)
         text = text.strip().lower()
-        right_answer = right_answer.strip().lower()
-        return True if text == right_answer else False
+        right_answer = [text.strip().lower() for text in right_answer]
+        return True if text in right_answer else False
 
     async def run_incoming(self, user: models.User, text: str, firts_time: bool = False) -> str:
         text_type: Optional[str] = None
