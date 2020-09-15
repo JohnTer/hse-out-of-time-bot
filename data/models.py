@@ -1,4 +1,4 @@
-import sys
+import functools
 from typing import List
 from django.db import models
 from aiogram import types
@@ -94,12 +94,12 @@ class Message(models.Model):
     previous_button_name = models.CharField(max_length=255, null=True)
 
     @staticmethod
-    @sync_to_async
+    @functools.lru_cache(maxsize=None)
     def get_message_by_name(name: str) -> 'Messages':
         return Message.objects.get(name=name)
 
     @staticmethod
-    @sync_to_async
+    @functools.lru_cache(maxsize=None)
     def filter_message_by_group(group: str) -> 'Messages':
         return Message.objects.filter(group=group)
 
@@ -114,7 +114,7 @@ class LinkedMessages(models.Model):
     next_state = models.CharField(max_length=255, null=True)
 
     @staticmethod
-    @sync_to_async
+    @functools.lru_cache(maxsize=None)
     def get_linked_message_by_name(name: str) -> 'LinkedMessages':
         return LinkedMessages.objects.get(name=name)
 
@@ -140,12 +140,12 @@ class FreeAnswerQuiz(models.Model):
         'FreeAnswerQuiz',  on_delete=models.SET_NULL, null=True, related_name='next_quiz_fk')
 
     @staticmethod
-    @sync_to_async
+    @functools.lru_cache(maxsize=None)
     def get_quiz_by_name(name: str) -> 'FreeAnswerQuiz':
         return FreeAnswerQuiz.objects.get(name=name)
 
     @staticmethod
-    @sync_to_async
+    @functools.lru_cache(maxsize=None)
     def get_quiz_all() -> List['FreeAnswerQuiz']:
         return FreeAnswerQuiz.objects.all()
 
