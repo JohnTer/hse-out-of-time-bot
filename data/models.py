@@ -153,3 +153,21 @@ class FreeAnswerQuiz(models.Model):
     def get_answers_list(quiz: 'FreeAnswerQuiz') -> List[str]:
         SEPARATOR: str = '#'
         return quiz.right_answer.split(SEPARATOR)
+
+
+class MagicCommand(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255)
+
+    command = models.CharField(max_length=255)
+
+    action = models.ForeignKey(
+        Message,  on_delete=models.SET_NULL, null=True)
+
+    unixtime = models.IntegerField(null=True)
+
+    @staticmethod
+    @sync_to_async
+    def get_magic_command_by_name(name: str) -> 'MagicCommand':
+        return MagicCommand.objects.get(name=name)
