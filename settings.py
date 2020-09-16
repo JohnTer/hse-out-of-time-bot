@@ -1,7 +1,8 @@
 import os
 import logging
+from logging.handlers import RotatingFileHandler
 
-from dotenv import load_dotenv
+import yaml
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
@@ -20,26 +21,39 @@ INSTALLED_APPS = (
     'data',
 )
 
-LOG_FORMAT = '%(name)s - %(levelname)s - %(asctime)s # %(message)s'
-logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt='%I:%M:%S')
+CONFIG_PATH = os.path.join(BASE_DIR, '../config.yaml')
 
+with open(CONFIG_PATH, 'r') as f:
+    config_yaml = yaml.safe_load(f.read())
 
-load_dotenv(dotenv_path=os.path.join(BASE_DIR, '.env'))
-
-API_TOKEN = os.getenv('API_TOKEN')
+API_TOKEN = config_yaml['telegram']['token']
 
 # webhook settings
-WEBHOOK_HOST = os.getenv('WEBHOOK_HOST')
-WEBHOOK_PATH = os.getenv('WEBHOOK_PATH')
-WEBHOOK_PORT = os.getenv('WEBHOOK_PORT')
+WEBHOOK_HOST = config_yaml['telegram']['webhook_host']
+WEBHOOK_PATH = config_yaml['telegram']['webhook_path']
+WEBHOOK_PORT = config_yaml['telegram']['webhook_port']
 
 # webserver settings
-WEBAPP_HOST = os.getenv('WEBAPP_HOST')
-WEBAPP_PORT = os.getenv('WEBAPP_PORT')
+WEBAPP_HOST = config_yaml['server']['host']
+WEBAPP_PORT = config_yaml['server']['port']
 
 # django secret key
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = config_yaml['django']['secret']
+
+MESSAGE_TIMEOUT = config_yaml['server']['message_timeout']
+
+LOG_FILE = config_yaml['server']['log_file']
 
 WEBHOOK_URL = f"{WEBHOOK_HOST}:{WEBHOOK_PORT}{WEBHOOK_PATH}"
 
-MESSAGE_TIMEOUT = 10 # sec
+LOG_FORMAT = '%(name)s - %(levelname)s - %(asctime)s # %(message)s'
+
+logger = logging.getLogger()
+
+log_handler = RotatingFileHandler(LOG_FILE, maxBytes=50 * 2 ** 20,
+                                  backupCount=50)
+                                  
+log_handler.setFormatter(logging.Formatter(LOG_FORMAT, datefmt='%I:%M:%S'))
+
+logger.addHandler(log_handler)
+logger.setLevel(logging.INFO)

@@ -13,7 +13,14 @@ async def echo(message: types.Message) -> None:
     current_time: float = time.time()
     if not timeout_message_middleware(message):
         return
-    await engine.message_handler(message)
+    try:
+        await engine.message_handler(message)
+    except Exception:
+        logging.exception('Unhandled exception by message: "%s"', message.text)
+        logging.warning("Reset user[chat_id:%d] status", message.chat.id)
+        await engine.reset_user_by_message(message)
+        
+    
     logging.info('the message \"%s\" by user %d was processed in %f ms',
                  message.text, message.from_user.id, (time.time() - current_time)*1000)
 

@@ -105,7 +105,7 @@ class MessageContext(BaseContext):
         if payload_data == 1:
             user.substate += 1
         elif payload_data == 0:
-            user.substate -= 1
+            user.substate = user.substate - 1 if user.substate > 0 else 0
         else:
             raise Exception()
         return await self.run_oucoming(user, message_id)
