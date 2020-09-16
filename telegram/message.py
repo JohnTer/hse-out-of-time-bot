@@ -32,7 +32,8 @@ class BaseContext(object):
         return media_file
 
     def _update_media_cache(self, message: models.Message, response) -> None:
-        file_id: str = response.photo[-1].file_id # -1 for get photo with best quality
+        # -1 for get photo with best quality
+        file_id: str = response.photo[-1].file_id
         self.media_cache.update(message.media_name, file_id)
 
     async def send_with_media(self, user: models.User, message: models.Message, reply_markup: types.ReplyKeyboardMarkup) -> None:
@@ -84,7 +85,8 @@ class MessageContext(BaseContext):
                 await self.bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, reply_markup=keyboard)
         except:
             await self.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
-            logging.warning('Message is not modified error by user %d, chat_id %d , send new message', user.id, chat_id)
+            logging.warning(
+                'Message is not modified error by user %d, chat_id %d , send new message', user.id, chat_id)
 
     async def _clear_keyboard(self, user: models.User, message_id: int) -> None:
         chat_id: int = user.chat_id
@@ -153,7 +155,8 @@ class QuizContext(BaseContext):
         return text_type
 
     def _check_right_answer(self, text: str) -> bool:
-        right_answer: List[str] = models.FreeAnswerQuiz.get_answers_list(self.current_quiz)
+        right_answer: List[str] = models.FreeAnswerQuiz.get_answers_list(
+            self.current_quiz)
         text = text.strip().lower()
         right_answer = [text.strip().lower() for text in right_answer]
         return True if text in right_answer else False
@@ -203,9 +206,23 @@ class WaitingContext(BaseContext):
     def __init__(self, bot: Bot) -> None:
         super().__init__()
         self.bot: Bot = bot
+        self.magic_command = 'magic_command'
 
     async def _incorrect_text_handler(self, user: models.User, message_id: int) -> None:
         await self.bot.delete_message(chat_id=user.chat_id, message_id=message_id)
 
+    async def _check_correctness(self, user: models.User, text: str) -> bool:
+        magic_command: models.MagicCommand = await models.MagicCommand.get_magic_command_by_name(self.magic_command)
+
+        if text.strip() != magic_command.command.strip():
+            return False
+        
+        message: models.Message = magic_command.action
+        await self.send_with_media(user, message, None)
+
+        return True
+
     async def run_incoming(self, user: models.User, text: str, message_id: int) -> None:
-        await self._incorrect_text_handler(user, message_id)
+        result: bool = await self._check_correctness(user, text)
+        if not result:
+            await self._incorrect_text_handler(user, message_id)
