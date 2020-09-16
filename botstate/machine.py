@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Optional, List
 
 from .states import State
@@ -28,6 +29,7 @@ class GreetingState(object):
         await self.context.init_context()
 
     async def _next_state_handler(self, user: models.User) -> None:
+        logging.info('The user [chat_id:%d] has moved to state %s', user.chat_id, self.next_state)
         user.state = self.next_state
         user.substate = None
         await user.async_save()
@@ -78,6 +80,7 @@ class DashboardState(object):
             self.bot)
 
     async def _next_state_handler(self, user: models.User, task: str) -> None:
+        logging.info('The user [chat_id:%d] has moved to state %s', user.chat_id, self.next_state)
         user.state = self.next_state
         user.substate = None
         user.solving_mode = False
@@ -85,6 +88,7 @@ class DashboardState(object):
         await user.async_save()
 
     async def _finish_state_handler(self, user: models.User) -> None:
+        logging.info('The user [chat_id:%d] has moved to state %s', user.chat_id, self.finish_state)
         user.state = self.finish_state
         user.substate = None
         user.solving_mode = False
@@ -151,6 +155,7 @@ class QuizState(object):
         return None
 
     async def right_answer_handler(self, user: models.User) -> None:
+        logging.info('The user [chat_id:%d] solve task: %s', user.chat_id, user.current_task)
         solved_task: str = user.current_task
         models.User.add_solved_task(user, solved_task)
         await self._back_to_menu(user)
@@ -246,3 +251,13 @@ class Machine(object):
         if user.state == State.DASHBOARD.name:
             sthandl = DashboardState(self.bot)
             await sthandl.outcoming_handler(user)
+
+    async def reset_user_by_message(self, tg_message: types.Message) -> None:
+         user_object: models.User = await self._get_user_by_message(tg_message)
+         user_object.state = 'DASHBOARD'
+         user_object.substate = None
+         user_object.solving_mode = False
+         user_object.substate = None
+         user_object.current_task = None
+
+         await user_object.async_save()

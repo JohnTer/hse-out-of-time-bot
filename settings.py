@@ -47,11 +47,13 @@ LOG_FILE = config_yaml['server']['log_file']
 WEBHOOK_URL = f"{WEBHOOK_HOST}:{WEBHOOK_PORT}{WEBHOOK_PATH}"
 
 LOG_FORMAT = '%(name)s - %(levelname)s - %(asctime)s # %(message)s'
-logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt='%I:%M:%S')
 
 logger = logging.getLogger()
 
 log_handler = RotatingFileHandler(LOG_FILE, maxBytes=50 * 2 ** 20,
                                   backupCount=50)
+                                  
+log_handler.setFormatter(logging.Formatter(LOG_FORMAT, datefmt='%I:%M:%S'))
 
 logger.addHandler(log_handler)
+logger.setLevel(logging.INFO)
