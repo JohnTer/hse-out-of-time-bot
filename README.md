@@ -67,4 +67,4 @@ django:
 
 ## Лицензия
 
-Весь код распространяются на правах лицензии [GNU General Public License Version 3](https://www.gnu.org/licenses/gpl-3.0.en.html).
+Весь код распространяется на правах лицензии [GNU General Public License Version 3](https://www.gnu.org/licenses/gpl-3.0.en.html).
